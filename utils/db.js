@@ -2,7 +2,10 @@ const isEqual = require('date-fns/isEqual')
 require("dotenv").config();
 
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://bx24in.space:27017/timesheetsblocks', {useNewUrlParser: true, useUnifiedTopology: true});
+
+const user = process.env.DB_USER;
+const pwd = process.env.DB_PWD;
+mongoose.connect(`mongodb://${user}:${pwd}@bx24in.space:27017/timesheetsblocks?authSource=admin`, {useNewUrlParser: true, useUnifiedTopology: true});
 
 const mongodb = mongoose.connection;
 mongodb.on('error', console.error.bind(console, 'connection error:'));
