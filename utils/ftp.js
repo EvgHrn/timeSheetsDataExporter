@@ -1,4 +1,5 @@
-import {differenceInMinutes, differenceInSeconds} from "date-fns";
+const differenceInMinutes = require('date-fns/difference_in_minutes');
+const differenceInSeconds = require('date-fns/difference_in_seconds');
 
 const fabricsList = require('../constants/fabricsList');
 const processesList = require('../constants/processes');
