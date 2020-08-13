@@ -193,7 +193,7 @@ class Db {
     static getAllTours = async () => {
         let items;
         try {
-            items = await Tour.find({}).exec();
+            items = await Tour.find();
         } catch (e) {
             console.log("Getting all tours error: ", e);
             return false;

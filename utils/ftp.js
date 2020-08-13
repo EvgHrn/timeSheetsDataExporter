@@ -127,7 +127,7 @@ class Ftp {
 
     static uploadDataFile = async (fileName) => {
         const data = await Db.getAllTours();
-        const tours = applyDurationsToActivitiesBlocksForDashboard(data);
+        const tours = data.map((tour) => applyDurationsToActivitiesBlocksForDashboard(tour._doc));
         console.log("Getting tours complete");
         // const aloneActivitiesBlocks = await Db.getAloneActivitiesBlocks();
         // console.log("Getting aloneActivitiesBlocks complete");
