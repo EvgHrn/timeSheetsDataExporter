@@ -1,3 +1,5 @@
+import {differenceInMinutes, differenceInSeconds} from "date-fns";
+
 const fabricsList = require('../constants/fabricsList');
 const processesList = require('../constants/processes');
 const Excel = require('../constants/excel');
@@ -6,6 +8,76 @@ const ftp = require("basic-ftp");
 const fs = require('fs');
 const ExcelJS = require('exceljs');
 const Db = require("./db");
+
+const timeDifferenceInMinutes = (start, end) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    startDate.setSeconds(0);
+    endDate.setSeconds(0);
+    const duration = Math.round(differenceInSeconds(endDate, startDate)/60);
+    return duration;
+}
+
+const applyLunch = (tour, lunch) => {
+    const withLunchTour = {...tour};
+    const justAfterLunchActivitiesBlockIndex = withLunchTour.activitiesBlocks.findIndex((activitiesBlock) => {
+        const activitiesBlockTime = ("datetime" in activitiesBlock) ? activitiesBlock.datetime : activitiesBlock.datetimeEnd;
+        return new Date(activitiesBlockTime) >= new Date(lunch.end);
+    });
+    // console.log("just After Lunch ActivitiesBlock Index: ", justAfterLunchActivitiesBlockIndex);
+
+    if(justAfterLunchActivitiesBlockIndex >= 0) {
+        const lunchDuration = differenceInMinutes(new Date(lunch.end), new Date(lunch.start));
+        let oldDuration;
+        if("duration" in withLunchTour.activitiesBlocks[justAfterLunchActivitiesBlockIndex]) {
+            oldDuration = withLunchTour.activitiesBlocks[justAfterLunchActivitiesBlockIndex].duration;
+            withLunchTour.activitiesBlocks[justAfterLunchActivitiesBlockIndex].duration = Math.abs(oldDuration - lunchDuration);
+        }
+        if("durationForDashboard" in withLunchTour.activitiesBlocks[justAfterLunchActivitiesBlockIndex]) {
+            oldDuration = withLunchTour.activitiesBlocks[justAfterLunchActivitiesBlockIndex].durationForDashboard
+            withLunchTour.activitiesBlocks[justAfterLunchActivitiesBlockIndex].durationForDashboard = Math.abs(oldDuration - lunchDuration);
+        }
+    }
+    return withLunchTour;
+};
+
+const applyDurationsToActivitiesBlocksForDashboard = (tour) => {
+
+    if(tour === undefined) return undefined;
+
+    let tempTour = {...tour};
+
+    for(let i = 0; i < tempTour.activitiesBlocks.length; i++) {
+        let duration = 0;
+        if(("datetime" in tempTour.activitiesBlocks[i]) && tempTour.activitiesBlocks[i].datetime) {
+            let firstDate = new Date(tempTour.activitiesBlocks[i].datetime);
+            let secondDate;
+            if(i === 0) {
+                secondDate = new Date(tour.start);
+            } else {
+                secondDate = new Date(tempTour.activitiesBlocks[i - 1].datetime);
+            }
+            duration = timeDifferenceInMinutes(secondDate, firstDate);
+        } else {
+            duration = timeDifferenceInMinutes(tempTour.activitiesBlocks[i].datetimeStart, tempTour.activitiesBlocks[i].datetimeEnd);
+        }
+        tempTour.activitiesBlocks[i].durationForDashboard = duration;
+    }
+
+    // console.log ("applyDurationsToActivitiesBlocksForDashboard: Tour with durations without applying lunch: ", tempTour);
+
+    if(("lunch") in tempTour && tempTour.lunch && tempTour.lunch.length) {
+        tempTour.lunch.map((lunch) => {
+            tempTour = applyLunch(tempTour, lunch);
+        });
+        // console.log ("applyDurationsToActivitiesBlocksForDashboard: Tour with durations lunch applied: ", tempTour);
+    } else {
+        // console.log("There are no lunch for apply");
+    }
+
+    return tempTour;
+
+}
 
 class Ftp {
     static getFileFromFtp = async (fileName) => {
@@ -53,7 +125,8 @@ class Ftp {
     }
 
     static uploadDataFile = async (fileName) => {
-        const tours = await Db.getAllTours();
+        const data = await Db.getAllTours();
+        const tours = applyDurationsToActivitiesBlocksForDashboard(data);
         console.log("Getting tours complete");
         // const aloneActivitiesBlocks = await Db.getAloneActivitiesBlocks();
         // console.log("Getting aloneActivitiesBlocks complete");
