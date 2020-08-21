@@ -11,7 +11,7 @@ const Ftp = require('./utils/ftp');
 
 require("dotenv").config();
 
-cron.schedule('*/10 * * * *', () => {
+cron.schedule('*/60 * * * *', () => {
     console.log('running a task every ten minutes');
     Ftp.uploadDataFile('data.xlsx');
 });
