@@ -16,8 +16,9 @@ class Excel {
     static durationColumn = 'O';
     static timeColumn = 'P';
     static recordNumberColumn = 'Q';
+    static hashColumn = 'R';
 
-    static columnsCount = 17;
+    static columnsCount = 18;
 
     static heightExcelRow = 15;
 }

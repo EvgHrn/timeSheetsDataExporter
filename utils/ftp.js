@@ -1,6 +1,8 @@
 const differenceInMinutes = require('date-fns/difference_in_minutes');
 const differenceInSeconds = require('date-fns/difference_in_seconds');
 
+const hash = require('object-hash');
+``
 const fabricsList = require('../constants/fabricsList');
 const processesList = require('../constants/processes');
 const Excel = require('../constants/excel');
@@ -253,8 +255,8 @@ class Ftp {
         activitiesBlocksRows.push([ 'Участок', 'Табельный номер сотрудника', 'Сотрудник', 'Дата', 'Номер заказа',
             //            F                         G                           H                 I                   J
             'Кол-во полуфабрикатов продукта','Наименование продукта', 'Кол-во изделий', 'Кол-во полуфабрикатов', 'Материал',
-            //           K          L            M                N             O                  P       Q
-            'Кол-во материала', 'Операция', 'Полуфабрикаты', 'Номер плоттера', 'Длительность', 'Время', 'id']);
+            //           K          L            M                N             O                  P       Q    R
+            'Кол-во материала', 'Операция', 'Полуфабрикаты', 'Номер плоттера', 'Длительность', 'Время', 'id', 'hash']);
 
         for(let i = 0; i < rows.length; i++) {
 
@@ -272,7 +274,7 @@ class Ftp {
                 }
                 const userName = rows[i].usersArray.join("\n");
 
-                activitiesBlocksRows.push([
+                const rowArray = [
                     rows[i].department,
                     userIdStr,
                     userName,
@@ -290,7 +292,32 @@ class Ftp {
                     rows[i].duration,
                     rows[i].time,
                     `${i + 1}`
-                ]);
+                ];
+
+                const rowArrayHash = hash(  { ...rowArray }, {algorithm: 'md5'});
+
+                const rowArrayWithHash = [
+                    rows[i].department,
+                    userIdStr,
+                    userName,
+                    rows[i].date,
+                    rows[i].activities[j].order,
+                    productPartsStr,
+                    rows[i].activities[j].product,
+                    units,
+                    parts,
+                    rows[i].material,
+                    rows[i].longMeters,
+                    rows[i].process,
+                    rows[i].subproducts.join(', '),
+                    rows[i].plotter,
+                    rows[i].duration,
+                    rows[i].time,
+                    `${i + 1}`,
+                    rowArrayHash
+                ];
+
+                activitiesBlocksRows.push(rowArrayWithHash);
             }
         }
 
@@ -317,6 +344,7 @@ class Ftp {
                 worksheet.mergeCells(`${Excel.plotterColumn}${masterRow}:${Excel.plotterColumn}${i - 1}`);
                 worksheet.mergeCells(`${Excel.durationColumn}${masterRow}:${Excel.durationColumn}${i - 1}`);
                 worksheet.mergeCells(`${Excel.timeColumn}${masterRow}:${Excel.timeColumn}${i - 1}`);
+                worksheet.mergeCells(`${Excel.hashColumn}${masterRow}:${Excel.hashColumn}${i - 1}`);
                 masterRow = i;
             } else {
                 masterRow = i;
@@ -349,6 +377,7 @@ class Ftp {
         worksheet.getColumn(Excel.durationColumn).width = 10;
         worksheet.getColumn(Excel.timeColumn).width = 10;
         worksheet.getColumn(Excel.longMetersColumn).width = 10;
+        worksheet.getColumn(Excel.hashColumn).width = 10;
 
         console.log('Setting cells width complete');
 
