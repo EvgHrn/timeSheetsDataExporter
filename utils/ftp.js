@@ -1,5 +1,5 @@
-const differenceInMinutes = require('date-fns/difference_in_minutes');
-const differenceInSeconds = require('date-fns/difference_in_seconds');
+const differenceInMinutes = require('date-fns/differenceInMinutes');
+const differenceInSeconds = require('date-fns/differenceInSeconds');
 
 const hash = require('object-hash');
 ``
